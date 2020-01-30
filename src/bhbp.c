@@ -1,6 +1,7 @@
 /* --------------------------------------------------------------------------------
 #
 #   Bellman-Harris Branching Process
+#   from Simon Frost: https://gist.github.com/sdwfrost/b3d0c4cbff7ff460562162affceffb17
 #   Sean Wu (slwu89@berkeley.edu)
 #   January 2020
 #
