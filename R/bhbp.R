@@ -17,5 +17,5 @@
 #' @useDynLib nCoV bhbp_C
 #' @export
 bhbp <- function(R0,k,shape,scale,index_cases,max_cases,max_time){
-  .Call(bhbp_C,as.numeric(R0),as.numeric(k),as.numeric(shape),as.numeric(scale),as.integer(index_cases),as.integer(max_cases),as.integer(max_time))
+  .Call(bhbp_C,as.numeric(R0),as.numeric(k),as.numeric(shape),as.numeric(scale),as.integer(index_cases),as.integer(max_cases),as.numeric(max_time))
 }

@@ -20,30 +20,31 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
   double shape = Rf_asReal(shaper);
   double scale = Rf_asReal(scaler);
 
-  int R0 = Rf_asInteger(R0r);
+  double R0 = Rf_asReal(R0r);
   double k = Rf_asReal(kr);
 
   int index_cases = Rf_asInteger(index_casesr);
   int cases = index_cases;
 
   // times,t
+  double* t = (double*)malloc(index_cases*sizeof(double));
+
   double_slist times;
   init_double_slist(&times);
   for(int j=0; j<index_cases; j++){
-    add_double_slist(&times,0.0);
+    add_double_slist(&times,0);
+    t[j] = 0;
   }
 
-  double* t = (double*)calloc(index_cases,sizeof(double));
-
-  int* secondary;
-  double* t_new;
-
+  int* secondary = NULL;
+  double* t_new = NULL;
 
   // simulation loop
   while((cases > 0) && (times.size < max_cases)){
 
     // sample num of secondary cases each primary case produces
-    secondary = (int*)malloc(sizeof(int)*cases);
+    secondary = (int*)realloc(secondary,sizeof(int)*cases);
+    // secondary = (int*)malloc(sizeof(int)*cases);
     int secondary_n = 0;
     for(int j=0; j<cases; j++){
       secondary[j] = (int)rnbinom_mu(k,R0);
@@ -51,13 +52,13 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
     }
 
     // sample their times of appearance
-    t_new = (double*)calloc(secondary_n,sizeof(double));
+    t_new = (double*)realloc(t_new,secondary_n*sizeof(double));
     int t_iter = 0;
     for(int j=0; j<cases; j++){
       // if this case had secondaries sample their branching times
       if(secondary[j] > 0){
         for(int k=0; k<secondary[j]; k++){
-          t_new[t_iter] = t[j] + rgamma(shape,scale);
+          t_new[t_iter] = t[j] + (double)rgamma(shape,scale);
           t_iter++;
         }
       }
@@ -65,7 +66,7 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
 
     // check if any have overrun max_time
     int overrun_n = 0;
-    for(int j=0; j<cases; j++){
+    for(int j=0; j<secondary_n; j++){
       if(t_new[j] >= max_time){
         overrun_n++;
       }

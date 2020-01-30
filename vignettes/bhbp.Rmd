@@ -1,0 +1,138 @@
+---
+title: "Branching process model of 2019nCoV spread"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Branching process model of 2019nCoV spread}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(nCoV)
+library(ggplot2)
+```
+
+## Branching process model of epidemic spread
+
+This vignette is made from [Simon Frost's](https://twitter.com/sdwfrost) code [here](https://gist.github.com/sdwfrost/b3d0c4cbff7ff460562162affceffb17).
+
+This code is adapted from the study of [Riou and Althaus](https://www.biorxiv.org/content/10.1101/2020.01.23.917351v1), using the [code from GitHub](https://github.com/jriou/wcov), stripped down and rewritten for clarity.
+
+Set random number seed.
+
+```{r}
+set.seed(2495)
+```
+
+Set parameter values, using values from [Imai et al.](https://www.imperial.ac.uk/media/imperial-college/medicine/sph/ide/gida-fellowships/Imperial-2019-nCoV-transmissibility.pdf) and assuming a gamma distribution of generation times with mean `mu` 8.4 days and standard deviation `sd` of 3.8 days, taken from [Lipsitch et al. (2003](https://science.sciencemag.org/content/300/5627/1966.full).
+
+```{r}
+R0 <- 2.6
+k <- 0.16
+mu <- 8.4
+stdev <- 3.8
+shape <- (mu/stdev)^2
+scale <- (stdev^2)/mu
+```
+
+
+Plot the generation time distribution.
+
+```{r}
+t <- seq(0,30,by=0.01)
+g <- dgamma(t,shape=shape,scale=scale)
+ggplot(data.frame(GenerationTime=t,Probability=g))+geom_line(aes(x=GenerationTime,y=Probability))
+```
+
+Plot the offspring distribution.
+
+```{r}
+i <- seq(0,10)
+d <- dnbinom(i, size=k, mu=R0)
+ggplot(data.frame(Number=i,Probability=d))+geom_bar(aes(x=Number,y=Probability),stat="identity")
+```
+
+Initial and stopping conditions.
+
+```{r}
+index_cases <- 40
+max_cases <- 5e4
+max_time <- 90
+```
+
+
+Set the number of simulations (note - Imai et al. used 5000).
+
+```{r}
+nsims <- 500
+```
+
+
+Run simulations.
+
+```{r}
+l <- list()
+for(i in 1:nsims){
+  times <- bhbp(R0,k,shape,scale,index_cases,max_cases,max_time)
+  # Generates cumulative counts per day
+  # Note that this includes the index cases
+  l[[i]] <- cumsum(hist(times, breaks = 0:max_time,plot=FALSE)$counts)
+}
+```
+
+Combine individual runs into a dataframe.
+
+```{r}
+results <- as.data.frame(do.call(cbind,l))
+```
+
+```{r}
+median_cases <- apply(results,1,median)
+lq_cases <- apply(results,1,quantile,0.025)
+uq_cases <- apply(results,1,quantile,0.975)
+summary_results <- data.frame(Day=seq(1,max_time),
+                              Date=as.Date("2019-12-01")+seq(1,max_time),
+                              Median=median_cases,
+                              Lower=lq_cases,Upper=uq_cases)
+```
+
+Add day/dates with day 0 corresponding to 2019-12-01.
+
+```{r}
+results$Day <- seq(1,max_time)
+results$Date <- as.Date("2019-12-01")+results$Day
+```
+
+```{r}
+results$Day <- seq(1,max_time)
+results$Date <- as.Date("2019-12-01")+results$Day
+```
+
+Reshape results into 'long' format.
+
+```{r}
+df <- reshape(results,varying=paste("V",1:nsims,sep=""),direction="long",sep="",idvar="Day",timevar="Run",v.names=c("Cases"))
+```
+
+Plot trajectories over time, highlighting 4000 cases on 2020-01-18.
+
+```{r}
+ntraj <- 20
+ggplot(summary_results)+
+    geom_line(aes(x=Date,y=Median),color="red")+
+    geom_line(aes(x=Date,y=Upper),color="blue")+
+    geom_line(aes(x=Date,y=Lower),color="blue")+
+    geom_ribbon(aes(x=Date,ymin=Lower,ymax=Upper, linetype = NA), fill="blue", alpha = 0.1)+
+    geom_line(aes(x=Date,y=Cases,group=factor(Run)),data=df[df$Run<=ntraj,],color="gray")+
+    coord_cartesian(xlim=c(as.Date("2019-12-01"),as.Date("2020-01-30")),ylim=c(1,20000))+
+    geom_vline(xintercept=as.Date("2020-01-18"))+
+    geom_hline(yintercept=4000)+
+    theme_classic()
+```
