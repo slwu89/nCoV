@@ -2,6 +2,7 @@
 #
 #   Bellman-Harris Branching Process
 #   from Simon Frost: https://gist.github.com/sdwfrost/b3d0c4cbff7ff460562162affceffb17
+#   in turn from: https://github.com/jriou/wcov
 #   Sean Wu (slwu89@berkeley.edu)
 #   January 2020
 #
@@ -28,7 +29,7 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
   int cases = index_cases;
 
   // times,t
-  double* t = (double*)malloc(index_cases*sizeof(double));
+  double* t = NULL;
 
   double_slist times;
   init_double_slist(&times);
@@ -45,7 +46,6 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
 
     // sample num of secondary cases each primary case produces
     secondary = (int*)realloc(secondary,sizeof(int)*cases);
-    // secondary = (int*)malloc(sizeof(int)*cases);
     int secondary_n = 0;
     for(int j=0; j<cases; j++){
       secondary[j] = (int)rnbinom_mu(k,R0);
@@ -87,7 +87,6 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
         }
       }
 
-
     } else {
 
       cases = secondary_n;
@@ -107,7 +106,7 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
   int i = 0;
   double_node* t_node = times.head;
   while(t_node != NULL){
-    times_out_ptr[i] = t_node->value;
+    times_out_ptr[i] = fmax(0.0,t_node->value);
     i++;
     t_node = t_node->next;
   }

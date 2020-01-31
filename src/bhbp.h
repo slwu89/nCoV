@@ -2,6 +2,7 @@
 #
 #   Bellman-Harris Branching Process
 #   from Simon Frost: https://gist.github.com/sdwfrost/b3d0c4cbff7ff460562162affceffb17
+#   in turn from: https://github.com/jriou/wcov
 #   Sean Wu (slwu89@berkeley.edu)
 #   January 2020
 #
