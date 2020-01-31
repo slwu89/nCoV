@@ -60,7 +60,6 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
       if(secondary[j] > 0){
         for(int k=0; k<secondary[j]; k++){
           t_new[t_iter] = t[j] + (double)rgamma(shape,scale);
-          // t_new[t_iter] = t[j] + (double)rgamma(shape,scale);
           t_iter++;
         }
       }
