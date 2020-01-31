@@ -29,7 +29,7 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
   int cases = index_cases;
 
   // times,t
-  double* t = NULL;
+  double* t = (double*)malloc(index_cases*sizeof(double));
 
   double_slist times;
   init_double_slist(&times);
@@ -60,6 +60,7 @@ SEXP bhbp_C(SEXP R0r, SEXP kr, SEXP shaper, SEXP scaler, SEXP index_casesr, SEXP
       if(secondary[j] > 0){
         for(int k=0; k<secondary[j]; k++){
           t_new[t_iter] = t[j] + (double)rgamma(shape,scale);
+          // t_new[t_iter] = t[j] + (double)rgamma(shape,scale);
           t_iter++;
         }
       }
